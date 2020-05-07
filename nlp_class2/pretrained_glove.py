@@ -70,7 +70,7 @@ def find_analogies(w1, w2, w3):
       best_word = word
       break
 
-  print(w1, "-", w2, "=", best_word, "-", w3)
+  print(w1, " - ", w2, "= [", best_word, "] - ", w3)
 
 
 def nearest_neighbors(w, n=5):

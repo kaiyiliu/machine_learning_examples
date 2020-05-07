@@ -17,11 +17,10 @@ from gensim.models import KeyedVectors
 
 
 # data from https://www.cs.umb.edu/~smimarog/textmining/datasets/
-train = pd.read_csv('../large_files/r8-train-all-terms.txt', header=None, sep='\t')
-test = pd.read_csv('../large_files/r8-test-all-terms.txt', header=None, sep='\t')
+train = pd.read_csv('../data/r8-train-all-terms.txt', header=None, sep='\t')
+test = pd.read_csv('../data/r8-test-all-terms.txt', header=None, sep='\t')
 train.columns = ['label', 'content']
 test.columns = ['label', 'content']
-
 
 
 class GloveVectorizer:
@@ -31,7 +30,7 @@ class GloveVectorizer:
     word2vec = {}
     embedding = []
     idx2word = []
-    with open('../large_files/glove.6B/glove.6B.50d.txt') as f:
+    with open('../data/word_vectors/glove.6B.50d.txt') as f:
       # is just a space-separated text file in the format:
       # word vec[0] vec[1] vec[2] ...
       for line in f:
@@ -41,13 +40,14 @@ class GloveVectorizer:
         word2vec[word] = vec
         embedding.append(vec)
         idx2word.append(word)
-    print('Found %s word vectors.' % len(word2vec))
 
     # save for later
     self.word2vec = word2vec
     self.embedding = np.array(embedding)
     self.word2idx = {v:k for k,v in enumerate(idx2word)}
     self.V, self.D = self.embedding.shape
+    
+    print(f'Found {self.V} word vectors with dimension {self.D}.')
 
   def fit(self, data):
     pass
@@ -82,20 +82,20 @@ class GloveVectorizer:
 class Word2VecVectorizer:
   def __init__(self):
     print("Loading in word vectors...")
-    self.word_vectors = KeyedVectors.load_word2vec_format(
-      '../large_files/GoogleNews-vectors-negative300.bin',
+    
+    self.word_vectors = KeyedVectors.load_word2vec_format(  
+      '../data/word_vectors/GoogleNews-vectors-negative300.bin',
       binary=True
     )
-    print("Finished loading in word vectors")
+    self.V = len(self.word_vectors)
+    self.D = self.word_vectors.get_vector('king').shape[0]
+    
+    print(f'Found {self.V} word vectors with dimension {self.D}.')
 
   def fit(self, data):
     pass
 
   def transform(self, data):
-    # determine the dimensionality of vectors
-    v = self.word_vectors.get_vector('king')
-    self.D = v.shape[0]
-
     X = np.zeros((len(data), self.D))
     n = 0
     emptycount = 0
