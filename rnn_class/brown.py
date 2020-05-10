@@ -8,6 +8,9 @@ from builtins import range
 
 from nltk.corpus import brown
 import operator
+import time
+import numpy as np
+
 
 KEEP_WORDS = set([
   'king', 'man', 'queen', 'woman',
@@ -18,8 +21,8 @@ KEEP_WORDS = set([
 
 def get_sentences():
   """
-    returns 57340 of the Brown corpus, each sentence is represented as a list of individual string tokens:
-    
+    Returns 57340 of the Brown corpus, each sentence is represented as a list of individual string tokens:
+
   """
   return brown.sents()
 
@@ -32,13 +35,16 @@ def get_sentences_with_word2idx():
   word2idx = {'START': 0, 'END': 1}
   for sentence in sentences:
     indexed_sentence = []
+    
     for token in sentence:
       token = token.lower()
+      
       if token not in word2idx:
         word2idx[token] = i
         i += 1
 
       indexed_sentence.append(word2idx[token])
+      
     indexed_sentences.append(indexed_sentence)
 
   print("Vocab size:", i)
@@ -46,6 +52,8 @@ def get_sentences_with_word2idx():
 
 
 def get_sentences_with_word2idx_limit_vocab(n_vocab=2000, keep_words=KEEP_WORDS):
+  start_time = time.time()
+  
   sentences = get_sentences()
   indexed_sentences = []
 
@@ -59,9 +67,12 @@ def get_sentences_with_word2idx_limit_vocab(n_vocab=2000, keep_words=KEEP_WORDS)
   }
 
   for sentence in sentences:
-    indexed_sentence = []
+    indexed_sentence = np.empty(len(sentence))
+    ii = 0
+    
     for token in sentence:
       token = token.lower()
+      
       if token not in word2idx:
         idx2word.append(token)
         word2idx[token] = i
@@ -70,17 +81,12 @@ def get_sentences_with_word2idx_limit_vocab(n_vocab=2000, keep_words=KEEP_WORDS)
       # keep track of counts for later sorting
       idx = word2idx[token]
       word_idx_count[idx] = word_idx_count.get(idx, 0) + 1
-
-      indexed_sentence.append(idx)
+      indexed_sentence[ii] = idx
+      ii += 1
+      
     indexed_sentences.append(indexed_sentence)
 
-
-
   # restrict vocab size
-
-  # set all the words I want to keep to infinity
-  # so that they are included when I pick the most
-  # common words
   for word in keep_words:
     word_idx_count[word2idx[word]] = float('inf')
 
@@ -88,12 +94,13 @@ def get_sentences_with_word2idx_limit_vocab(n_vocab=2000, keep_words=KEEP_WORDS)
   word2idx_small = {}
   new_idx = 0
   idx_new_idx_map = {}
+  
   for idx, count in sorted_word_idx_count[:n_vocab]:
     word = idx2word[idx]
-    print(word, count)
     word2idx_small[word] = new_idx
     idx_new_idx_map[idx] = new_idx
     new_idx += 1
+    
   # let 'unknown' be the last token
   word2idx_small['UNKNOWN'] = new_idx 
   unknown = new_idx
@@ -109,6 +116,8 @@ def get_sentences_with_word2idx_limit_vocab(n_vocab=2000, keep_words=KEEP_WORDS)
     if len(sentence) > 1:
       new_sentence = [idx_new_idx_map[idx] if idx in idx_new_idx_map else unknown for idx in sentence]
       sentences_small.append(new_sentence)
+      
+  print("--- get_sentences_with_word2idx_limit_vocab execution time: %s seconds ---" % (time.time() - start_time))
 
   return sentences_small, word2idx_small
 
